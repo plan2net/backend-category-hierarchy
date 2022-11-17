@@ -1,0 +1,31 @@
+{
+  "name": "plan2net/backend-category-hierarchy",
+  "version": "1.0.0",
+  "type": "typo3-cms-extension",
+  "description": "Show category hierarchy information in list view",
+  "homepage": "https://plan2.net",
+  "license": [
+    "GPL-2.0-or-later"
+  ],
+  "keywords": [
+    "TYPO3 CMS",
+    "Category",
+    "Backend"
+  ],
+  "require": {
+    "typo3/cms-core": "*"
+  },
+  "suggest": {
+    "georgringer/news": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Plan2net\\BackendCategoryHierarchy\\": "Classes/"
+    }
+  },
+  "extra": {
+    "typo3/cms": {
+      "extension-key": "backend_category_hierarchy"
+    }
+  }
+}
