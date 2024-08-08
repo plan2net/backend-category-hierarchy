@@ -6,7 +6,7 @@ $EM_CONF['backend_category_hierarchy'] = [
     'category' => 'backend',
     'constraints' => [
         'depends' => [
-            'typo3' => '',
+            'typo3' => '12.4.0-12.4.99',
         ],
         'suggests' => [
             'news' => '',
@@ -15,9 +15,8 @@ $EM_CONF['backend_category_hierarchy'] = [
         ],
     ],
     'state' => 'stable',
-    'clearCacheOnLoad' => 1,
     'author' => 'Wolfgang Klinger',
     'author_email' => 'wk@plan2.net',
     'author_company' => 'plan2net GmbH',
-    'version' => '1.0.0',
+    'version' => '12.0.0',
 ];

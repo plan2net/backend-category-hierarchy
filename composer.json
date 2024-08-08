@@ -1,6 +1,6 @@
 {
   "name": "plan2net/backend-category-hierarchy",
-  "version": "1.0.0",
+  "version": "12.0.0",
   "type": "typo3-cms-extension",
   "description": "Show category hierarchy information in list view",
   "homepage": "https://plan2.net",
@@ -13,7 +13,7 @@
     "Backend"
   ],
   "require": {
-    "typo3/cms-core": "*"
+    "typo3/cms-core": "^12.4"
   },
   "suggest": {
     "georgringer/news": "*"
