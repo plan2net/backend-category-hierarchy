@@ -8,8 +8,6 @@ This extension adds a small method to process the category title and add the who
 
 It does not change anything in the record edit or tree views.
 
-### _News_ extension
+## Compatibility
 
-The _news_ extension adds its own processor for category titles, but does nothing useful imho, 
-so we don't call it afterwards.
-The `route` checked there (`\GeorgRinger\News\Hooks\Labels`) is never matching.
+Compatible with TYPO3 v13 LTS and v14 LTS.
