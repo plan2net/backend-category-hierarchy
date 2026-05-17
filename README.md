@@ -62,6 +62,14 @@ Placeholders in `titleTemplate`:
 Invalid values (empty, or a template missing one of the placeholders) silently
 fall back to the defaults `{current} ({ancestors})` and ` > `.
 
+> [!NOTE]
+> **Workspaces:** the current (leaf) record is workspace-overlaid via
+> `BackendUtility::getRecordWSOL`. Ancestor titles and chain structure are read
+> from **live** data — workspace edits to a parent category's title or its
+> `parent` pointer only become visible in the chain after publication.
+> Collapsing the chain into a single recursive CTE would require reimplementing
+> TYPO3's workspace-overlay rules in SQL, which is fragile and out of scope.
+
 ## Development
 
 ```bash
