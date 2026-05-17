@@ -7,6 +7,7 @@ $EM_CONF['backend_category_hierarchy'] = [
     'constraints' => [
         'depends' => [
             'typo3' => '13.4.0-14.99.99',
+            'backend' => '13.4.0-14.99.99',
         ],
         'suggests' => [
             'news' => '',
