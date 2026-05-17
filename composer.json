@@ -16,6 +16,10 @@
     "php": "^8.2",
     "typo3/cms-core": "^13.4 || ^14.0"
   },
+  "require-dev": {
+    "phpunit/phpunit": "^11.5",
+    "typo3/testing-framework": "^9.3 || ^10.0"
+  },
   "suggest": {
     "georgringer/news": "*"
   },
@@ -23,6 +27,21 @@
     "psr-4": {
       "Plan2net\\BackendCategoryHierarchy\\": "Classes/"
     }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Plan2net\\BackendCategoryHierarchy\\Tests\\": "Tests/"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "typo3/class-alias-loader": true,
+      "typo3/cms-composer-installers": true
+    },
+    "sort-packages": true
+  },
+  "scripts": {
+    "test:unit": "phpunit -c Tests/phpunit.xml --testsuite unit --testdox"
   },
   "extra": {
     "typo3/cms": {

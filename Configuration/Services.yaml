@@ -1,0 +1,11 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  Plan2net\BackendCategoryHierarchy\:
+    resource: '../Classes/*'
+
+  Plan2net\BackendCategoryHierarchy\CategoryLabelProcessor:
+    public: true

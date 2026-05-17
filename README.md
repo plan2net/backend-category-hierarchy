@@ -11,3 +11,9 @@ It does not change anything in the record edit or tree views.
 ## Compatibility
 
 Compatible with TYPO3 v13 LTS and v14 LTS.
+
+## Tests
+
+```bash
+composer test:unit
+```

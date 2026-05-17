@@ -9,89 +9,133 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 final class CategoryLabelProcessor
 {
-    private const SEPARATOR = ' > ';
+    private const TABLE = 'sys_category';
+    private const MAX_DEPTH = 50;
+    private const EDIT_MODE_ROUTE_PATHS = [
+        '/record/edit',
+        '/ajax/record/tree/fetchData',
+    ];
+
+    /** @var array<string, list<string>> */
+    private array $chainCache = [];
+
+    public function __construct(
+        private readonly ConnectionPool $connectionPool,
+        private readonly TitleFormatter $titleFormatter,
+    ) {
+    }
 
     /**
+     * @param array{table?: string, row: array<string, mixed>, title?: string, options?: array<string, mixed>} $parameters
+     *
      * @throws Exception
      *
      * @see BackendUtility::getRecordTitle
      */
     public function process(array &$parameters): void
     {
-        $record = BackendUtility::getRecordWSOL('sys_category', (int) $parameters['row']['uid']);
-        $currentTitle = $record['title'] ?? '';
-        // Display/List mode only
+        $record = BackendUtility::getRecordWSOL(self::TABLE, (int) $parameters['row']['uid']);
+        $currentTitle = (string) ($record['title'] ?? '');
         if ($this->isEditMode()) {
             $parameters['title'] = $currentTitle;
 
             return;
         }
 
-        $titles = $this->getCategoryParentTitlesRecursive(
-            (int) $record['parent'],
-            (int) $record['sys_language_uid']
+        $ancestorTitles = $this->buildAncestorChain(
+            (int) ($record['parent'] ?? 0),
+            (int) ($record['sys_language_uid'] ?? 0),
         );
-        $parameters['title'] = $this->composeCompleteTitle($titles, $currentTitle);
+        $parameters['title'] = $this->titleFormatter->format($currentTitle, $ancestorTitles);
     }
 
     /**
+     * @return list<string>
+     *
      * @throws Exception
      */
-    private function getCategoryParentTitlesRecursive(
-        int $parentCategoryId,
-        int $languageId = 0
-    ): array {
-        if (!$parentCategoryId) {
+    private function buildAncestorChain(int $startUid, int $languageId): array
+    {
+        if ($startUid === 0) {
             return [];
         }
 
-        $path = [[]];
+        $cacheKey = $startUid.':'.$languageId;
+        if (isset($this->chainCache[$cacheKey])) {
+            return $this->chainCache[$cacheKey];
+        }
 
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getQueryBuilderForTable('sys_category');
-        $result = $queryBuilder
+        $chain = [];
+        $visited = [];
+        $currentUid = $startUid;
+        $depth = 0;
+        while ($currentUid !== 0 && $depth < self::MAX_DEPTH) {
+            if (isset($visited[$currentUid])) {
+                break;
+            }
+            $visited[$currentUid] = true;
+
+            $row = $this->fetchCategoryRow($currentUid);
+            if ($row === null) {
+                break;
+            }
+
+            $title = $languageId !== 0
+                ? $this->fetchTranslatedTitle($row['uid'], $languageId)
+                : $row['title'];
+            if ($title !== '') {
+                $chain[] = $title;
+            }
+            $currentUid = $row['parent'];
+            ++$depth;
+        }
+
+        return $this->chainCache[$cacheKey] = $chain;
+    }
+
+    /**
+     * @return array{uid: int, parent: int, title: string}|null
+     *
+     * @throws Exception
+     */
+    private function fetchCategoryRow(int $uid): ?array
+    {
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);
+        $row = $queryBuilder
             ->select('uid', 'parent', 'title')
-            ->from('sys_category')
+            ->from(self::TABLE)
             ->where(
                 $queryBuilder->expr()->eq(
                     'uid',
-                    $queryBuilder->createNamedParameter($parentCategoryId)
+                    $queryBuilder->createNamedParameter($uid, Connection::PARAM_INT)
                 )
             )
-            ->executeQuery();
-        while ($row = $result->fetchAssociative()) {
-            $title = $row['title'];
-            if (0 !== $languageId) {
-                $title = $this->translateCategoryTitle((int) $row['uid'], $languageId);
-            }
-
-            $path[] = [$title];
-            $path[] = $this->getCategoryParentTitlesRecursive((int) $row['parent'], $languageId);
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchAssociative();
+        if ($row === false) {
+            return null;
         }
 
-        return array_filter(array_merge(...$path));
-    }
-
-    private function composeCompleteTitle(array $titles, string $currentTitle): string
-    {
-        return $currentTitle . (count($titles) ?
-            ' (' . trim(self::SEPARATOR . ' ' . implode(self::SEPARATOR, $titles)) . ')' : '');
+        return [
+            'uid' => (int) $row['uid'],
+            'parent' => (int) $row['parent'],
+            'title' => (string) $row['title'],
+        ];
     }
 
     /**
      * @throws Exception
      */
-    private function translateCategoryTitle(int $categoryId, int $languageId): string
+    private function fetchTranslatedTitle(int $categoryId, int $languageId): string
     {
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getQueryBuilderForTable('sys_category');
-        $result = $queryBuilder
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);
+        $row = $queryBuilder
             ->select('title')
-            ->from('sys_category')
+            ->from(self::TABLE)
             ->where(
                 $queryBuilder->expr()->eq(
                     'sys_language_uid',
@@ -103,20 +147,24 @@ final class CategoryLabelProcessor
                 )
             )
             ->setMaxResults(1)
-            ->executeQuery()->fetchAssociative();
+            ->executeQuery()
+            ->fetchAssociative();
 
-        return $result['title'] ?? '';
+        return (string) ($row['title'] ?? '');
     }
 
     private function isEditMode(): bool
     {
-        /** @var ServerRequestInterface $request */
-        $request = $GLOBALS['TYPO3_REQUEST'];
+        $request = $GLOBALS['TYPO3_REQUEST'] ?? null;
+        if (!$request instanceof ServerRequestInterface) {
+            return false;
+        }
         $route = $request->getAttribute('route');
+        if ($route === null) {
+            return false;
+        }
         $path = $route->getPath();
 
-        return
-            '/record/edit' === $path
-            || '/ajax/record/tree/fetchData' === $path;
+        return \in_array($path, self::EDIT_MODE_ROUTE_PATHS, true);
     }
 }
