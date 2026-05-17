@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Plan2net\BackendCategoryHierarchy;
 
-use Doctrine\DBAL\Exception;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Backend\Domain\Repository\Localization\LocalizationRepository;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Database\Connection;
-use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Site\SiteFinder;
 
@@ -29,16 +28,15 @@ final class CategoryLabelProcessor
     private array $settingsCache = [];
 
     public function __construct(
-        private readonly ConnectionPool $connectionPool,
         private readonly TitleFormatter $titleFormatter,
+        private readonly LocalizationRepository $localizationRepository,
+        private readonly Context $context,
         private readonly SiteFinder $siteFinder,
     ) {
     }
 
     /**
      * @param array{table?: string, row: array<string, mixed>, title?: string, options?: array<string, mixed>} $parameters
-     *
-     * @throws Exception
      *
      * @see BackendUtility::getRecordTitle
      */
@@ -79,8 +77,6 @@ final class CategoryLabelProcessor
 
     /**
      * @return list<string>
-     *
-     * @throws Exception
      */
     private function buildAncestorChain(int $startUid, int $languageId): array
     {
@@ -108,9 +104,13 @@ final class CategoryLabelProcessor
                 break;
             }
 
-            $title = $languageId !== 0
-                ? $this->fetchTranslatedTitle($row['uid'], $languageId)
-                : $row['title'];
+            $title = $row['title'];
+            if ($languageId !== 0) {
+                $localized = $this->fetchLocalizedTitle($row['uid'], $languageId);
+                if ($localized !== '') {
+                    $title = $localized;
+                }
+            }
             if ($title !== '') {
                 $chain[] = $title;
             }
@@ -123,59 +123,36 @@ final class CategoryLabelProcessor
 
     /**
      * @return array{uid: int, parent: int, title: string}|null
-     *
-     * @throws Exception
      */
     private function fetchCategoryRow(int $uid): ?array
     {
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);
-        $row = $queryBuilder
-            ->select('uid', 'parent', 'title')
-            ->from(self::TABLE)
-            ->where(
-                $queryBuilder->expr()->eq(
-                    'uid',
-                    $queryBuilder->createNamedParameter($uid, Connection::PARAM_INT)
-                )
-            )
-            ->setMaxResults(1)
-            ->executeQuery()
-            ->fetchAssociative();
-        if ($row === false) {
+        $record = BackendUtility::getRecordWSOL(self::TABLE, $uid);
+        if (!\is_array($record)) {
             return null;
         }
 
         return [
-            'uid' => (int) $row['uid'],
-            'parent' => (int) $row['parent'],
-            'title' => (string) $row['title'],
+            'uid' => (int) ($record['uid'] ?? 0),
+            'parent' => (int) ($record['parent'] ?? 0),
+            'title' => (string) ($record['title'] ?? ''),
         ];
     }
 
-    /**
-     * @throws Exception
-     */
-    private function fetchTranslatedTitle(int $categoryId, int $languageId): string
+    private function fetchLocalizedTitle(int $uid, int $languageId): string
     {
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE);
-        $row = $queryBuilder
-            ->select('title')
-            ->from(self::TABLE)
-            ->where(
-                $queryBuilder->expr()->eq(
-                    'sys_language_uid',
-                    $queryBuilder->createNamedParameter($languageId, Connection::PARAM_INT)
-                ),
-                $queryBuilder->expr()->eq(
-                    'l10n_parent',
-                    $queryBuilder->createNamedParameter($categoryId, Connection::PARAM_INT)
-                )
-            )
-            ->setMaxResults(1)
-            ->executeQuery()
-            ->fetchAssociative();
+        // @phpstan-ignore function.alreadyNarrowedType (TYPO3 v13 compatibility branch)
+        if (method_exists($this->localizationRepository, 'getRecordTranslation')) {
+            $workspaceId = (int) $this->context->getPropertyFromAspect('workspace', 'id', 0);
+            $translation = $this->localizationRepository->getRecordTranslation(self::TABLE, $uid, $languageId, $workspaceId);
+            /** @psalm-suppress InternalMethod */
+            $title = $translation?->toArray()['title'] ?? '';
 
-        return (string) ($row['title'] ?? '');
+            return (string) $title;
+        }
+        /** @psalm-suppress DeprecatedMethod */
+        $rows = BackendUtility::getRecordLocalization(self::TABLE, $uid, $languageId);
+
+        return \is_array($rows) && isset($rows[0]['title']) ? (string) $rows[0]['title'] : '';
     }
 
     private function isEditMode(): bool
