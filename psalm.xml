@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<psalm
+    xmlns="https://getpsalm.org/schema/config"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+    errorLevel="2"
+    resolveFromConfigFile="true"
+    findUnusedBaselineEntry="true"
+    findUnusedCode="false"
+>
+    <projectFiles>
+        <directory name="Classes" />
+        <directory name="Tests" />
+        <ignoreFiles>
+            <directory name="vendor" />
+            <directory name="Tests/.phpunit.cache" />
+        </ignoreFiles>
+    </projectFiles>
+</psalm>
