@@ -5,32 +5,25 @@ declare(strict_types=1);
 namespace Plan2net\BackendCategoryHierarchy;
 
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Backend\Domain\Repository\Localization\LocalizationRepository;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Site\SiteFinder;
 
 final class CategoryLabelProcessor
 {
     private const TABLE = 'sys_category';
-    private const MAX_DEPTH = 50;
+    private const SITE_CONFIG_KEY = 'backendCategoryHierarchy';
     private const EDIT_MODE_ROUTE_PATHS = [
         '/record/edit',
         '/ajax/record/tree/fetchData',
     ];
-    private const SITE_CONFIG_KEY = 'backendCategoryHierarchy';
-
-    /** @var array<string, list<string>> */
-    private array $chainCache = [];
 
     /** @var array<int, TitleFormatSettings> */
     private array $settingsCache = [];
 
     public function __construct(
         private readonly TitleFormatter $titleFormatter,
-        private readonly LocalizationRepository $localizationRepository,
-        private readonly Context $context,
+        private readonly AncestorChainBuilder $ancestorChainBuilder,
         private readonly SiteFinder $siteFinder,
     ) {
     }
@@ -50,7 +43,7 @@ final class CategoryLabelProcessor
             return;
         }
 
-        $ancestorTitles = $this->buildAncestorChain(
+        $ancestorTitles = $this->ancestorChainBuilder->build(
             (int) ($record['parent'] ?? 0),
             (int) ($record['sys_language_uid'] ?? 0),
         );
@@ -73,86 +66,6 @@ final class CategoryLabelProcessor
             template: (string) ($configuration['titleTemplate'] ?? ''),
             separator: (string) ($configuration['ancestorSeparator'] ?? ''),
         );
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function buildAncestorChain(int $startUid, int $languageId): array
-    {
-        if ($startUid === 0) {
-            return [];
-        }
-
-        $cacheKey = $startUid.':'.$languageId;
-        if (isset($this->chainCache[$cacheKey])) {
-            return $this->chainCache[$cacheKey];
-        }
-
-        $chain = [];
-        $visited = [];
-        $currentUid = $startUid;
-        $depth = 0;
-        while ($currentUid !== 0 && $depth < self::MAX_DEPTH) {
-            if (isset($visited[$currentUid])) {
-                break;
-            }
-            $visited[$currentUid] = true;
-
-            $row = $this->fetchCategoryRow($currentUid);
-            if ($row === null) {
-                break;
-            }
-
-            $title = $row['title'];
-            if ($languageId !== 0) {
-                $localized = $this->fetchLocalizedTitle($row['uid'], $languageId);
-                if ($localized !== '') {
-                    $title = $localized;
-                }
-            }
-            if ($title !== '') {
-                $chain[] = $title;
-            }
-            $currentUid = $row['parent'];
-            ++$depth;
-        }
-
-        return $this->chainCache[$cacheKey] = $chain;
-    }
-
-    /**
-     * @return array{uid: int, parent: int, title: string}|null
-     */
-    private function fetchCategoryRow(int $uid): ?array
-    {
-        $record = BackendUtility::getRecordWSOL(self::TABLE, $uid);
-        if (!\is_array($record)) {
-            return null;
-        }
-
-        return [
-            'uid' => (int) ($record['uid'] ?? 0),
-            'parent' => (int) ($record['parent'] ?? 0),
-            'title' => (string) ($record['title'] ?? ''),
-        ];
-    }
-
-    private function fetchLocalizedTitle(int $uid, int $languageId): string
-    {
-        // @phpstan-ignore function.alreadyNarrowedType (TYPO3 v13 compatibility branch)
-        if (method_exists($this->localizationRepository, 'getRecordTranslation')) {
-            $workspaceId = (int) $this->context->getPropertyFromAspect('workspace', 'id', 0);
-            $translation = $this->localizationRepository->getRecordTranslation(self::TABLE, $uid, $languageId, $workspaceId);
-            /** @psalm-suppress InternalMethod */
-            $title = $translation?->toArray()['title'] ?? '';
-
-            return (string) $title;
-        }
-        /** @psalm-suppress DeprecatedMethod */
-        $rows = BackendUtility::getRecordLocalization(self::TABLE, $uid, $languageId);
-
-        return \is_array($rows) && isset($rows[0]['title']) ? (string) $rows[0]['title'] : '';
     }
 
     private function isEditMode(): bool
