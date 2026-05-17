@@ -13,7 +13,6 @@
         <directory name="Tests" />
         <ignoreFiles>
             <directory name="vendor" />
-            <directory name="Tests/.phpunit.cache" />
             <directory name="Tests/Functional" />
         </ignoreFiles>
     </projectFiles>

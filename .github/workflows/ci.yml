@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+
+jobs:
+  tests:
+    name: PHP ${{ matrix.php }} / TYPO3 ${{ matrix.typo3 }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3', '8.4']
+        typo3: ['^13.4', '^14.3']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: intl, mbstring, pdo_sqlite, json, xml, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Cache Composer downloads
+        if: ${{ !env.ACT }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ matrix.php }}-${{ matrix.typo3 }}-${{ hashFiles('composer.json') }}
+          restore-keys: |
+            composer-${{ matrix.php }}-${{ matrix.typo3 }}-
+            composer-${{ matrix.php }}-
+
+      - name: Pin TYPO3 version
+        env:
+          TYPO3_VERSION: ${{ matrix.typo3 }}
+        run: |
+          composer require --no-update typo3/cms-core:"$TYPO3_VERSION"
+          composer require --no-update typo3/cms-backend:"$TYPO3_VERSION"
+
+      - name: Install dependencies
+        env:
+          TYPO3_SKIP_ASSET_PUBLISH: '1'
+        run: composer update --no-interaction --no-progress --prefer-dist
+
+      - name: Unit tests
+        run: composer test:unit
+
+      - name: Functional tests
+        env:
+          typo3DatabaseDriver: pdo_sqlite
+        run: composer test:functional
+
+  composer-validate:
+    name: composer validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+      - run: composer validate --no-check-publish
+
+  static-analysis:
+    name: cs / phpstan / psalm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: intl, mbstring, json, xml
+          tools: composer:v2
+          coverage: none
+
+      - name: Cache Composer downloads
+        if: ${{ !env.ACT }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-quality-${{ hashFiles('composer.json') }}
+          restore-keys: |
+            composer-quality-
+
+      - name: Install dependencies
+        env:
+          TYPO3_SKIP_ASSET_PUBLISH: '1'
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: PHP-CS-Fixer
+        run: composer cs
+
+      - name: PHPStan
+        run: composer phpstan
+
+      - name: Psalm
+        run: composer psalm
