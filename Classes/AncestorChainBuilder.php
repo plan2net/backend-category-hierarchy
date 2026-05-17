@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Plan2net\BackendCategoryHierarchy;
 
-use TYPO3\CMS\Backend\Domain\Repository\Localization\LocalizationRepository;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Context\Context;
+use Doctrine\DBAL\Exception;
+use TYPO3\CMS\Core\Database\Connection;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 
 final class AncestorChainBuilder
 {
@@ -17,13 +17,14 @@ final class AncestorChainBuilder
     private array $cache = [];
 
     public function __construct(
-        private readonly LocalizationRepository $localizationRepository,
-        private readonly Context $context,
+        private readonly ConnectionPool $connectionPool,
     ) {
     }
 
     /**
      * @return list<string>
+     *
+     * @throws Exception
      */
     public function build(int $startUid, int $languageId): array
     {
@@ -36,69 +37,49 @@ final class AncestorChainBuilder
             return $this->cache[$cacheKey];
         }
 
+        // Single recursive CTE: walks the parent chain on default-language rows
+        // and overlays the localized title via LEFT JOIN. Workspace overlay is
+        // intentionally not applied here — chain structure and titles reflect
+        // live data. The current record still uses BackendUtility::getRecordWSOL.
+        $sql = \sprintf(
+            'WITH RECURSIVE ancestors AS (
+                SELECT uid, parent, title, 0 AS depth
+                FROM %1$s
+                WHERE uid = :startUid AND deleted = 0 AND sys_language_uid = 0
+                UNION ALL
+                SELECT c.uid, c.parent, c.title, a.depth + 1
+                FROM %1$s c
+                INNER JOIN ancestors a ON c.uid = a.parent
+                WHERE a.depth < %2$d AND c.deleted = 0 AND c.sys_language_uid = 0
+            )
+            SELECT COALESCE(t.title, a.title) AS title
+            FROM ancestors a
+            LEFT JOIN %1$s t
+                ON t.l10n_parent = a.uid
+                AND t.sys_language_uid = :languageId
+                AND t.deleted = 0
+            ORDER BY a.depth ASC',
+            self::TABLE,
+            self::MAX_DEPTH,
+        );
+
+        $rows = $this->connectionPool
+            ->getConnectionForTable(self::TABLE)
+            ->executeQuery(
+                $sql,
+                ['startUid' => $startUid, 'languageId' => $languageId],
+                ['startUid' => Connection::PARAM_INT, 'languageId' => Connection::PARAM_INT],
+            )
+            ->fetchAllAssociative();
+
         $chain = [];
-        $visited = [];
-        $currentUid = $startUid;
-        $depth = 0;
-        while ($currentUid !== 0 && $depth < self::MAX_DEPTH) {
-            if (isset($visited[$currentUid])) {
-                break;
-            }
-            $visited[$currentUid] = true;
-
-            $row = $this->loadCategory($currentUid);
-            if ($row === null) {
-                break;
-            }
-
-            $title = $row['title'];
-            if ($languageId !== 0) {
-                $localized = $this->localizedTitleOf($row['uid'], $languageId);
-                if ($localized !== '') {
-                    $title = $localized;
-                }
-            }
+        foreach ($rows as $row) {
+            $title = (string) ($row['title'] ?? '');
             if ($title !== '') {
                 $chain[] = $title;
             }
-            $currentUid = $row['parent'];
-            ++$depth;
         }
 
         return $this->cache[$cacheKey] = $chain;
-    }
-
-    /**
-     * @return array{uid: int, parent: int, title: string}|null
-     */
-    private function loadCategory(int $uid): ?array
-    {
-        $record = BackendUtility::getRecordWSOL(self::TABLE, $uid);
-        if (!\is_array($record)) {
-            return null;
-        }
-
-        return [
-            'uid' => (int) ($record['uid'] ?? 0),
-            'parent' => (int) ($record['parent'] ?? 0),
-            'title' => (string) ($record['title'] ?? ''),
-        ];
-    }
-
-    private function localizedTitleOf(int $uid, int $languageId): string
-    {
-        // @phpstan-ignore function.alreadyNarrowedType (TYPO3 v13 compatibility branch)
-        if (method_exists($this->localizationRepository, 'getRecordTranslation')) {
-            $workspaceId = (int) $this->context->getPropertyFromAspect('workspace', 'id', 0);
-            $translation = $this->localizationRepository->getRecordTranslation(self::TABLE, $uid, $languageId, $workspaceId);
-            /** @psalm-suppress InternalMethod */
-            $title = $translation?->toArray()['title'] ?? '';
-
-            return (string) $title;
-        }
-        /** @psalm-suppress DeprecatedMethod */
-        $rows = BackendUtility::getRecordLocalization(self::TABLE, $uid, $languageId);
-
-        return \is_array($rows) && isset($rows[0]['title']) ? (string) $rows[0]['title'] : '';
     }
 }
