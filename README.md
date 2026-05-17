@@ -39,24 +39,39 @@ renders as:
 Java (Programming > Topic)
 ```
 
-To change the format per Site, add a `backendCategoryHierarchy` block to
-`config/sites/<identifier>/config.yaml`:
+The extension ships a Site Set with the defaults. Activate it per Site by
+adding the dependency in `config/sites/<identifier>/config.yaml`:
 
 ```yaml
-backendCategoryHierarchy:
-  titleTemplate: '{ancestors} > {current}'
-  ancestorSeparator: ' > '
-  compactTitleTemplate: '{current} ({ancestors})'
+dependencies:
+  - plan2net/backend-category-hierarchy
 ```
 
-With the snippet above, list rows render as:
+That is enough — every Site that depends on the set gets the default
+`Java (Programming > Topic)` rendering without any further configuration.
+
+To override the defaults for a Site, add a `settings:` block alongside the
+dependency:
+
+```yaml
+dependencies:
+  - plan2net/backend-category-hierarchy
+
+settings:
+  backendCategoryHierarchy:
+    titleTemplate: '{ancestors} > {current}'
+    ancestorSeparator: ' > '
+    compactTitleTemplate: '{current} ({ancestors})'
+```
+
+With the override above, list rows render as:
 
 ```
 Programming > Topic > Java
 ```
 
 In the global backend search (and other narrow popups that truncate at the
-end), the `compactTitleTemplate` is used instead, so the leaf stays visible:
+end), `compactTitleTemplate` is used instead so the leaf stays visible:
 
 ```
 Java (Programming > Topic)

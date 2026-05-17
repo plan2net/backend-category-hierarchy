@@ -1,0 +1,22 @@
+categories:
+  backendCategoryHierarchy:
+    label: 'LLL:EXT:backend_category_hierarchy/Resources/Private/Language/locallang.xlf:settings.category.backendCategoryHierarchy.label'
+
+settings:
+  backendCategoryHierarchy.titleTemplate:
+    default: '{current} ({ancestors})'
+    type: string
+    category: backendCategoryHierarchy
+    label: 'LLL:EXT:backend_category_hierarchy/Resources/Private/Language/locallang.xlf:settings.titleTemplate.label'
+    description: 'LLL:EXT:backend_category_hierarchy/Resources/Private/Language/locallang.xlf:settings.titleTemplate.description'
+  backendCategoryHierarchy.ancestorSeparator:
+    default: ' > '
+    type: string
+    category: backendCategoryHierarchy
+    label: 'LLL:EXT:backend_category_hierarchy/Resources/Private/Language/locallang.xlf:settings.ancestorSeparator.label'
+  backendCategoryHierarchy.compactTitleTemplate:
+    default: '{current} ({ancestors})'
+    type: string
+    category: backendCategoryHierarchy
+    label: 'LLL:EXT:backend_category_hierarchy/Resources/Private/Language/locallang.xlf:settings.compactTitleTemplate.label'
+    description: 'LLL:EXT:backend_category_hierarchy/Resources/Private/Language/locallang.xlf:settings.compactTitleTemplate.description'
