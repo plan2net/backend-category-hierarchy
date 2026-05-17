@@ -1,8 +1,12 @@
 # Backend Category Hierarchy
 
-Show the full parent path of every `sys_category` record in TYPO3 backend lists.
+[![Packagist Version](https://img.shields.io/packagist/v/plan2net/backend-category-hierarchy.svg)](https://packagist.org/packages/plan2net/backend-category-hierarchy)
+[![Downloads](https://img.shields.io/packagist/dt/plan2net/backend-category-hierarchy.svg)](https://packagist.org/packages/plan2net/backend-category-hierarchy)
+[![Supported TYPO3](https://img.shields.io/badge/TYPO3-13.4%20%7C%2014-orange.svg)](https://get.typo3.org/)
+[![Supported PHP](https://img.shields.io/badge/PHP-8.2%20%7C%208.3%20%7C%208.4-blue.svg)](https://www.php.net/)
+[![License](https://img.shields.io/badge/license-GPL--2.0%2B-blue.svg)](LICENSE)
 
-Compatible with TYPO3 v13 LTS and v14 LTS.
+Show the full parent path of every `sys_category` record in TYPO3 backend lists.
 
 ![Backend list view of categories](Documentation/category_list_default.png)
 
