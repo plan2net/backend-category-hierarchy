@@ -6,20 +6,18 @@ namespace Plan2net\BackendCategoryHierarchy;
 
 final readonly class TitleFormatter
 {
-    public function __construct(
-        private string $separator = ' > ',
-    ) {
-    }
-
     /**
      * @param list<string> $ancestorTitles
      */
-    public function format(string $currentTitle, array $ancestorTitles): string
+    public function format(string $currentTitle, array $ancestorTitles, TitleFormatSettings $settings): string
     {
         if ($ancestorTitles === []) {
             return $currentTitle;
         }
 
-        return $currentTitle.' ('.implode($this->separator, $ancestorTitles).')';
+        return strtr($settings->template, [
+            '{current}' => $currentTitle,
+            '{ancestors}' => implode($settings->separator, $ancestorTitles),
+        ]);
     }
 }

@@ -9,6 +9,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Exception\SiteNotFoundException;
+use TYPO3\CMS\Core\Site\SiteFinder;
 
 final class CategoryLabelProcessor
 {
@@ -18,13 +20,18 @@ final class CategoryLabelProcessor
         '/record/edit',
         '/ajax/record/tree/fetchData',
     ];
+    private const SITE_CONFIG_KEY = 'backendCategoryHierarchy';
 
     /** @var array<string, list<string>> */
     private array $chainCache = [];
 
+    /** @var array<int, TitleFormatSettings> */
+    private array $settingsCache = [];
+
     public function __construct(
         private readonly ConnectionPool $connectionPool,
         private readonly TitleFormatter $titleFormatter,
+        private readonly SiteFinder $siteFinder,
     ) {
     }
 
@@ -49,7 +56,25 @@ final class CategoryLabelProcessor
             (int) ($record['parent'] ?? 0),
             (int) ($record['sys_language_uid'] ?? 0),
         );
-        $parameters['title'] = $this->titleFormatter->format($currentTitle, $ancestorTitles);
+        $settings = $this->resolveSettingsForPage((int) ($record['pid'] ?? 0));
+        $parameters['title'] = $this->titleFormatter->format($currentTitle, $ancestorTitles, $settings);
+    }
+
+    private function resolveSettingsForPage(int $pageId): TitleFormatSettings
+    {
+        if (isset($this->settingsCache[$pageId])) {
+            return $this->settingsCache[$pageId];
+        }
+        try {
+            $configuration = $this->siteFinder->getSiteByPageId($pageId)->getConfiguration()[self::SITE_CONFIG_KEY] ?? [];
+        } catch (SiteNotFoundException) {
+            return $this->settingsCache[$pageId] = TitleFormatSettings::defaults();
+        }
+
+        return $this->settingsCache[$pageId] = new TitleFormatSettings(
+            template: (string) ($configuration['titleTemplate'] ?? ''),
+            separator: (string) ($configuration['ancestorSeparator'] ?? ''),
+        );
     }
 
     /**

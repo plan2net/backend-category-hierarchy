@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Plan2net\BackendCategoryHierarchy\Tests\Unit;
 
 use PHPUnit\Framework\Attributes\Test;
+use Plan2net\BackendCategoryHierarchy\TitleFormatSettings;
 use Plan2net\BackendCategoryHierarchy\TitleFormatter;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
@@ -15,39 +16,44 @@ final class TitleFormatterTest extends UnitTestCase
     {
         $formatter = new TitleFormatter();
 
-        self::assertSame('Sports', $formatter->format('Sports', []));
-    }
-
-    #[Test]
-    public function appendsSingleAncestorInParentheses(): void
-    {
-        $formatter = new TitleFormatter();
-
         self::assertSame(
-            'Tennis (Sports)',
-            $formatter->format('Tennis', ['Sports'])
+            'Java',
+            $formatter->format('Java', [], TitleFormatSettings::defaults())
         );
     }
 
     #[Test]
-    public function joinsAncestorChainWithDefaultSeparator(): void
+    public function formatsWithDefaultTemplate(): void
     {
         $formatter = new TitleFormatter();
 
         self::assertSame(
-            'Wimbledon (Tennis > Sports > Events)',
-            $formatter->format('Wimbledon', ['Tennis', 'Sports', 'Events'])
+            'Java (Programming > Topic)',
+            $formatter->format('Java', ['Programming', 'Topic'], TitleFormatSettings::defaults())
+        );
+    }
+
+    #[Test]
+    public function formatsWithBreadcrumbTemplate(): void
+    {
+        $formatter = new TitleFormatter();
+        $settings = new TitleFormatSettings('{ancestors} > {current}', ' > ');
+
+        self::assertSame(
+            'Programming > Topic > Java',
+            $formatter->format('Java', ['Programming', 'Topic'], $settings)
         );
     }
 
     #[Test]
     public function honoursConfiguredSeparator(): void
     {
-        $formatter = new TitleFormatter(' / ');
+        $formatter = new TitleFormatter();
+        $settings = new TitleFormatSettings('{current} ({ancestors})', ' / ');
 
         self::assertSame(
-            'Wimbledon (Tennis / Sports / Events)',
-            $formatter->format('Wimbledon', ['Tennis', 'Sports', 'Events'])
+            'Java (Programming / Topic)',
+            $formatter->format('Java', ['Programming', 'Topic'], $settings)
         );
     }
 }
