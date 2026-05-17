@@ -1,10 +1,14 @@
 # Backend Category Hierarchy
 
-> Show the full parent path of every `sys_category` record in TYPO3 backend lists.
+Show the full parent path of every `sys_category` record in TYPO3 backend lists.
 
 Compatible with TYPO3 v13 LTS and v14 LTS.
 
 ![Backend list view of categories](Documentation/category_list_default.png)
+
+The hierarchy is also shown in the global backend search:
+
+![Hierarchy in the global backend search](Documentation/live_search_results.png)
 
 ## Why
 
