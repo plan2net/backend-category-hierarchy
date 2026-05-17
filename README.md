@@ -46,15 +46,23 @@ To change the format per Site, add a `backendCategoryHierarchy` block to
 backendCategoryHierarchy:
   titleTemplate: '{ancestors} > {current}'
   ancestorSeparator: ' > '
+  compactTitleTemplate: '{current} ({ancestors})'
 ```
 
-With the snippet above, the same category renders as:
+With the snippet above, list rows render as:
 
 ```
 Programming > Topic > Java
 ```
 
-Placeholders in `titleTemplate`:
+In the global backend search (and other narrow popups that truncate at the
+end), the `compactTitleTemplate` is used instead, so the leaf stays visible:
+
+```
+Java (Programming > Topic)
+```
+
+Placeholders (both templates):
 
 - `{current}` — the category title
 - `{ancestors}` — the ancestor chain joined by `ancestorSeparator`

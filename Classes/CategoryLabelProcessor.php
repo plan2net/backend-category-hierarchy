@@ -17,6 +17,9 @@ final class CategoryLabelProcessor
         '/record/edit',
         '/ajax/record/tree/fetchData',
     ];
+    private const COMPACT_ROUTE_PATHS = [
+        '/ajax/livesearch/search',
+    ];
 
     /** @var array<int, TitleFormatSettings> */
     private array $settingsCache = [];
@@ -48,6 +51,9 @@ final class CategoryLabelProcessor
             (int) ($record['sys_language_uid'] ?? 0),
         );
         $settings = $this->resolveSettingsForPage((int) ($record['pid'] ?? 0));
+        if ($this->isCompactContext()) {
+            $settings = $settings->forCompactContext();
+        }
         $parameters['title'] = $this->titleFormatter->format($currentTitle, $ancestorTitles, $settings);
     }
 
@@ -65,10 +71,24 @@ final class CategoryLabelProcessor
         return $this->settingsCache[$pageId] = new TitleFormatSettings(
             template: (string) ($configuration['titleTemplate'] ?? ''),
             separator: (string) ($configuration['ancestorSeparator'] ?? ''),
+            compactTemplate: (string) ($configuration['compactTitleTemplate'] ?? ''),
         );
     }
 
     private function isEditMode(): bool
+    {
+        return $this->currentRouteMatches(self::EDIT_MODE_ROUTE_PATHS);
+    }
+
+    private function isCompactContext(): bool
+    {
+        return $this->currentRouteMatches(self::COMPACT_ROUTE_PATHS);
+    }
+
+    /**
+     * @param list<string> $paths
+     */
+    private function currentRouteMatches(array $paths): bool
     {
         $request = $GLOBALS['TYPO3_REQUEST'] ?? null;
         if (!$request instanceof ServerRequestInterface) {
@@ -78,8 +98,7 @@ final class CategoryLabelProcessor
         if ($route === null) {
             return false;
         }
-        $path = $route->getPath();
 
-        return \in_array($path, self::EDIT_MODE_ROUTE_PATHS, true);
+        return \in_array($route->getPath(), $paths, true);
     }
 }

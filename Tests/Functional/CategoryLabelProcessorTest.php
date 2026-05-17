@@ -56,6 +56,21 @@ final class CategoryLabelProcessorTest extends FunctionalTestCase
         self::assertSame('Java', $parameters['title'] ?? '');
     }
 
+    #[Test]
+    public function usesCompactTemplateOnLiveSearchRoute(): void
+    {
+        // With no site config the compact template defaults to {current} ({ancestors})
+        // — same as the regular default, so this just verifies the route is honoured
+        // without throwing. The behavioural difference shows up when a site has a
+        // breadcrumb titleTemplate but the default compactTitleTemplate.
+        $this->setRequestPath('/ajax/livesearch/search');
+        $parameters = ['row' => ['uid' => 3]];
+
+        $this->processor->process($parameters);
+
+        self::assertSame('Java (Programming > Topic)', $parameters['title'] ?? '');
+    }
+
     private function setRequestPath(string $path): void
     {
         $request = (new ServerRequest('GET', 'https://example.com/typo3'.$path))

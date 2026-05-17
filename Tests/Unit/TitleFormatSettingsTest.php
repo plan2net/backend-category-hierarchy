@@ -58,5 +58,29 @@ final class TitleFormatSettingsTest extends UnitTestCase
 
         self::assertSame(TitleFormatSettings::DEFAULT_TEMPLATE, $settings->template);
         self::assertSame(TitleFormatSettings::DEFAULT_SEPARATOR, $settings->separator);
+        self::assertSame(TitleFormatSettings::DEFAULT_COMPACT_TEMPLATE, $settings->compactTemplate);
+    }
+
+    #[Test]
+    public function fallsBackToDefaultCompactTemplateWhenInvalid(): void
+    {
+        $settings = new TitleFormatSettings('{ancestors} > {current}', ' > ', 'only {current}');
+
+        self::assertSame(TitleFormatSettings::DEFAULT_COMPACT_TEMPLATE, $settings->compactTemplate);
+    }
+
+    #[Test]
+    public function forCompactContextReturnsInstanceUsingCompactTemplate(): void
+    {
+        $settings = new TitleFormatSettings(
+            '{ancestors} > {current}',
+            ' / ',
+            '{current} :: {ancestors}',
+        );
+
+        $compact = $settings->forCompactContext();
+
+        self::assertSame('{current} :: {ancestors}', $compact->template);
+        self::assertSame(' / ', $compact->separator);
     }
 }
