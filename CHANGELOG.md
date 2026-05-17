@@ -12,13 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - TYPO3 v14 LTS support alongside v13.4 LTS.
-- Per-Site title format. A `backendCategoryHierarchy` block in
-  `config/sites/<id>/config.yaml` configures `titleTemplate`,
-  `ancestorSeparator`, and `compactTitleTemplate`. Placeholders: `{current}`
-  and `{ancestors}`.
+- Site Set with sensible defaults. Activate per Site by adding
+  `plan2net/backend-category-hierarchy` to the `dependencies:` list in
+  `config/sites/<id>/config.yaml`. No further configuration required to use
+  the defaults.
+- Configurable per Site via the `settings:` block:
+  `backendCategoryHierarchy.titleTemplate`,
+  `backendCategoryHierarchy.ancestorSeparator`, and
+  `backendCategoryHierarchy.compactTitleTemplate`. Placeholders: `{current}`,
+  `{ancestors}`.
 - `compactTitleTemplate` (default `{current} ({ancestors})`) used in the
   global backend search so the category name stays readable when long titles
   get truncated.
+- English and German translations for the settings labels (XLIFF).
 
 ### Changed
 

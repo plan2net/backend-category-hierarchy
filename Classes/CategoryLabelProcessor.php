@@ -12,7 +12,6 @@ use TYPO3\CMS\Core\Site\SiteFinder;
 final class CategoryLabelProcessor
 {
     private const TABLE = 'sys_category';
-    private const SITE_CONFIG_KEY = 'backendCategoryHierarchy';
     private const EDIT_MODE_ROUTE_PATHS = [
         '/record/edit',
         '/ajax/record/tree/fetchData',
@@ -63,15 +62,15 @@ final class CategoryLabelProcessor
             return $this->settingsCache[$pageId];
         }
         try {
-            $configuration = $this->siteFinder->getSiteByPageId($pageId)->getConfiguration()[self::SITE_CONFIG_KEY] ?? [];
+            $siteSettings = $this->siteFinder->getSiteByPageId($pageId)->getSettings();
         } catch (SiteNotFoundException) {
             return $this->settingsCache[$pageId] = TitleFormatSettings::defaults();
         }
 
         return $this->settingsCache[$pageId] = new TitleFormatSettings(
-            template: (string) ($configuration['titleTemplate'] ?? ''),
-            separator: (string) ($configuration['ancestorSeparator'] ?? ''),
-            compactTemplate: (string) ($configuration['compactTitleTemplate'] ?? ''),
+            template: (string) $siteSettings->get('backendCategoryHierarchy.titleTemplate', ''),
+            separator: (string) $siteSettings->get('backendCategoryHierarchy.ancestorSeparator', ''),
+            compactTemplate: (string) $siteSettings->get('backendCategoryHierarchy.compactTitleTemplate', ''),
         );
     }
 

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" target-language="de" datatype="plaintext" original="messages" date="2026-05-17T00:00:00Z" product-name="backend_category_hierarchy">
+        <header/>
+        <body>
+            <trans-unit id="settings.category.backendCategoryHierarchy.label" approved="yes">
+                <source>Backend Category Hierarchy</source>
+                <target>Backend-Kategoriehierarchie</target>
+            </trans-unit>
+            <trans-unit id="settings.titleTemplate.label" approved="yes">
+                <source>Title template (list view)</source>
+                <target>Titelvorlage (Listenansicht)</target>
+            </trans-unit>
+            <trans-unit id="settings.titleTemplate.description" approved="yes">
+                <source>Placeholders: {current}, {ancestors}</source>
+                <target>Platzhalter: {current}, {ancestors}</target>
+            </trans-unit>
+            <trans-unit id="settings.ancestorSeparator.label" approved="yes">
+                <source>Ancestor separator</source>
+                <target>Trennzeichen für übergeordnete Kategorien</target>
+            </trans-unit>
+            <trans-unit id="settings.compactTitleTemplate.label" approved="yes">
+                <source>Compact title template (global backend search)</source>
+                <target>Kompakte Titelvorlage (globale Backend-Suche)</target>
+            </trans-unit>
+            <trans-unit id="settings.compactTitleTemplate.description" approved="yes">
+                <source>Placeholders: {current}, {ancestors}</source>
+                <target>Platzhalter: {current}, {ancestors}</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

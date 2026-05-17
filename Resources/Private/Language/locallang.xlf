@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="messages" date="2026-05-17T00:00:00Z" product-name="backend_category_hierarchy">
+        <header/>
+        <body>
+            <trans-unit id="settings.category.backendCategoryHierarchy.label">
+                <source>Backend Category Hierarchy</source>
+            </trans-unit>
+            <trans-unit id="settings.titleTemplate.label">
+                <source>Title template (list view)</source>
+            </trans-unit>
+            <trans-unit id="settings.titleTemplate.description">
+                <source>Placeholders: {current}, {ancestors}</source>
+            </trans-unit>
+            <trans-unit id="settings.ancestorSeparator.label">
+                <source>Ancestor separator</source>
+            </trans-unit>
+            <trans-unit id="settings.compactTitleTemplate.label">
+                <source>Compact title template (global backend search)</source>
+            </trans-unit>
+            <trans-unit id="settings.compactTitleTemplate.description">
+                <source>Placeholders: {current}, {ancestors}</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>
