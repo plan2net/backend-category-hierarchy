@@ -61,4 +61,15 @@ final class AncestorChainBuilderTest extends FunctionalTestCase
             $this->builder->build(5, 0)
         );
     }
+
+    #[Test]
+    public function resolvesTranslatedSeedUidToDefaultLanguage(): void
+    {
+        // uid=10 is the German translation of Programming (uid=2);
+        // build(10, 0) should still produce the default-language chain
+        self::assertSame(
+            ['Programming', 'Topic'],
+            $this->builder->build(10, 0)
+        );
+    }
 }

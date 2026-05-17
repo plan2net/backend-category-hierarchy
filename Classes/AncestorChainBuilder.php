@@ -38,14 +38,21 @@ final class AncestorChainBuilder
         }
 
         // Single recursive CTE: walks the parent chain on default-language rows
-        // and overlays the localized title via LEFT JOIN. Workspace overlay is
-        // intentionally not applied here — chain structure and titles reflect
-        // live data. The current record still uses BackendUtility::getRecordWSOL.
+        // and overlays the localized title via LEFT JOIN. The seed normalizes
+        // a translated start uid to its default-language equivalent via
+        // l10n_parent so the walk stays on the default-language tree.
+        // Workspace overlay is intentionally not applied here — chain structure
+        // and titles reflect live data. The current record still uses
+        // BackendUtility::getRecordWSOL.
         $sql = \sprintf(
             'WITH RECURSIVE ancestors AS (
                 SELECT uid, parent, title, 0 AS depth
                 FROM %1$s
-                WHERE uid = :startUid AND deleted = 0 AND sys_language_uid = 0
+                WHERE uid = (
+                    SELECT CASE WHEN sys_language_uid > 0 AND l10n_parent > 0
+                                THEN l10n_parent ELSE uid END
+                    FROM %1$s WHERE uid = :startUid
+                ) AND deleted = 0 AND sys_language_uid = 0
                 UNION ALL
                 SELECT c.uid, c.parent, c.title, a.depth + 1
                 FROM %1$s c
