@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [14.0.1] - 2026-11-03
+
 ### Fixed
 
 - No more PHP warning when a category label is rendered for a row without a
@@ -47,5 +49,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Chain resolves correctly when a record's `parent` points at a translation
   row instead of the default-language record (uses `l10n_parent` to normalise).
 
-[Unreleased]: https://github.com/plan2net/backend-category-hierarchy/compare/14.0.0...HEAD
+[Unreleased]: https://github.com/plan2net/backend-category-hierarchy/compare/14.0.1...HEAD
+[14.0.1]: https://github.com/plan2net/backend-category-hierarchy/compare/14.0.0...14.0.1
 [14.0.0]: https://github.com/plan2net/backend-category-hierarchy/releases/tag/14.0.0

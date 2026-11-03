@@ -19,5 +19,5 @@ $EM_CONF['backend_category_hierarchy'] = [
     'author' => 'Wolfgang Klinger',
     'author_email' => 'wk@plan2.net',
     'author_company' => 'plan2net GmbH',
-    'version' => '14.0.0',
+    'version' => '14.0.1',
 ];
