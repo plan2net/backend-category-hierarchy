@@ -71,6 +71,28 @@ final class CategoryLabelProcessorTest extends FunctionalTestCase
         self::assertSame('Java (Programming > Topic)', $parameters['title'] ?? '');
     }
 
+    #[Test]
+    public function returnsEmptyTitleForRowWithoutUid(): void
+    {
+        $this->setRequestPath('/record/history');
+        $parameters = ['row' => []];
+
+        $this->processor->process($parameters);
+
+        self::assertSame('', $parameters['title'] ?? '');
+    }
+
+    #[Test]
+    public function fallsBackToRowTitleWhenRecordIsNotInDatabase(): void
+    {
+        $this->setRequestPath('/module/web/list');
+        $parameters = ['row' => ['uid' => 'NEW1234', 'title' => 'Draft', 'parent' => 2]];
+
+        $this->processor->process($parameters);
+
+        self::assertSame('Draft', $parameters['title'] ?? '');
+    }
+
     private function setRequestPath(string $path): void
     {
         $request = (new ServerRequest('GET', 'https://example.com/typo3'.$path))

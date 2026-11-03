@@ -37,7 +37,12 @@ final class CategoryLabelProcessor
      */
     public function process(array &$parameters): void
     {
-        $record = BackendUtility::getRecordWSOL(self::TABLE, (int) $parameters['row']['uid']);
+        $record = BackendUtility::getRecordWSOL(self::TABLE, (int) ($parameters['row']['uid'] ?? 0));
+        if ($record === null) {
+            $parameters['title'] = (string) ($parameters['row']['title'] ?? '');
+
+            return;
+        }
         $currentTitle = (string) ($record['title'] ?? '');
         if ($this->isEditMode()) {
             $parameters['title'] = $currentTitle;
