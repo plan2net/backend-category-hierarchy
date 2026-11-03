@@ -65,6 +65,7 @@ final class AncestorChainBuilder
                 ON t.l10n_parent = a.uid
                 AND t.sys_language_uid = :languageId
                 AND t.deleted = 0
+                AND t.t3ver_wsid = 0
             ORDER BY a.depth ASC',
             self::TABLE,
             self::MAX_DEPTH,
