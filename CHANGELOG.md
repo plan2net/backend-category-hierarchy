@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- No more PHP warning when a category label is rendered for a row without a
+  `uid`, e.g. a deleted category in the record history. Rows that are not in
+  the database (deleted, or new `NEW…` records) now show their own title.
+- Workspace versions of translated categories no longer leak into the live
+  ancestor chain or show up twice in it.
+
 ## [14.0.0] - 2026-05-17
 
 ### Added
